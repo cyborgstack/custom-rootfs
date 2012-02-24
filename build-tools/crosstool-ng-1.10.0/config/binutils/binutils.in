@@ -1,0 +1,205 @@
+# binutils options
+
+comment "GNU binutils"
+
+choice
+    bool
+    prompt "binutils version"
+# Don't remove next line
+# CT_INSERT_VERSION_BELOW
+
+config BINUTILS_V_2_21
+    bool
+    depends on EXPERIMENTAL
+    prompt "2.21"
+    select BINUTILS_2_21_or_later
+
+config BINUTILS_V_2_20_1
+    bool
+    prompt "2.20.1"
+
+config BINUTILS_V_2_20
+    bool
+    prompt "2.20"
+
+config BINUTILS_V_2_19_1
+    bool
+    prompt "2.19.1"
+
+config BINUTILS_V_2_19
+    bool
+    prompt "2.19"
+
+config BINUTILS_V_2_18
+    bool
+    prompt "2.18"
+
+config BINUTILS_V_2_17
+    bool
+    prompt "2.17 (OBSOLETE)"
+    depends on OBSOLETE
+
+config BINUTILS_V_2_16_1
+    bool
+    prompt "2.16.1 (OBSOLETE)"
+    depends on OBSOLETE
+
+endchoice
+
+config BINUTILS_VERSION
+    string
+# Don't remove next line
+# CT_INSERT_VERSION_STRING_BELOW
+    default "2.21" if BINUTILS_V_2_21
+    default "2.20.1" if BINUTILS_V_2_20_1
+    default "2.20" if BINUTILS_V_2_20
+    default "2.19.1" if BINUTILS_V_2_19_1
+    default "2.19" if BINUTILS_V_2_19
+    default "2.18" if BINUTILS_V_2_18
+    default "2.17" if BINUTILS_V_2_17
+    default "2.16.1" if BINUTILS_V_2_16_1
+
+config BINUTILS_2_21_or_later
+    bool
+    select BINUTILS_HAS_GOLD
+    select BINUTILS_HAS_PLUGINS
+
+config BINUTILS_HAS_GOLD
+    bool
+
+config BINUTILS_HAS_PLUGINS
+    bool
+
+if BINUTILS_HAS_GOLD
+
+choice
+    bool
+    prompt "Linkers to enable"
+
+config BINUTILS_LINKER_LD
+    bool
+    prompt "ld"
+    help
+      The historical, bfd linker.
+
+config BINUTILS_LINKER_GOLD
+    bool
+    prompt "gold"
+    depends on BINUTILS_HAS_GOLD
+    depends on EXPERIMENTAL
+    select BINUTILS_GOLD_INSTALLED
+    help
+      gold is a new, optimised, multi-threaded linker with support
+      for plugins. Designed to be a drop-in replacement for the
+      original linker, ld, it can be much faster, with a 5:1 or
+      bigger ratio being not uncommon, YMMV.
+
+config BINUTILS_LINKER_LD_GOLD
+    bool
+    prompt "ld, gold"
+    depends on BINUTILS_HAS_GOLD
+    depends on EXPERIMENTAL
+    select BINUTILS_GOLD_INSTALLED
+    select BINUTILS_LINKER_BOTH
+    help
+      Both the historical ld and the new gold linkers will be
+      installed, with ld being the default linker used.
+      
+      See help for gold, above.
+
+config BINUTILS_LINKER_GOLD_LD
+    bool
+    prompt "gold, ld"
+    depends on BINUTILS_HAS_GOLD
+    depends on EXPERIMENTAL
+    select BINUTILS_GOLD_INSTALLED
+    select BINUTILS_LINKER_BOTH
+    help
+      Both the historical ld and the new gold linkers will be
+      installed, with gold being the default linker used.
+      
+      See help for gold, above.
+
+endchoice # Enable linkers
+
+config BINUTILS_GOLD_INSTALLED
+    bool
+
+config BINUTILS_GOLD_THREADS
+    bool
+    prompt "|  Enable threaded gold"
+    depends on BINUTILS_GOLD_INSTALLED
+    help
+      When configured with threads, gold can link in parallel,
+      possibly cooperating with a make jobserver.
+
+config BINUTILS_LINKER_BOTH
+    bool
+
+config BINUTILS_LINKERS_LIST
+    string
+    default "ld"        if BINUTILS_LINKER_LD
+    default "gold"      if BINUTILS_LINKER_GOLD
+    default "ld,gold"   if BINUTILS_LINKER_LD_GOLD
+    default "gold,ld"   if BINUTILS_LINKER_GOLD_LD
+
+config BINUTILS_LD_WRAPPER
+    bool
+    prompt "|  Add ld wrapper"
+    depends on BINUTILS_LINKER_BOTH
+    help
+      Add an ld wrapper that calls to either gold or ld.
+      
+      By default, the wrapper will call to the default wrapper,
+      but if you set the environment variable CTNG_LD_IS, you
+      can change which linker will get called:
+        CTNG_LD_IS=gold     will unconditionally call the gold linker
+        CTNG_LD_IS=bfd      will unconditionally call the old bfd ld linker
+
+config BINUTILS_LINKER_DEFAULT
+    string
+    depends on BINUTILS_LD_WRAPPER
+    default "bfd"   if BINUTILS_LINKER_LD_GOLD
+    default "gold"  if BINUTILS_LINKER_GOLD_LD
+
+endif # BINUTILS_HAS_GOLD
+
+config BINUTILS_PLUGINS
+    bool
+    prompt "Enable support for plugins"
+    depends on BINUTILS_HAS_PLUGINS
+    help
+      binutils can be extended through the use of plugins.
+      Especially, gold can use the lto-plugin, as installed
+      by gcc, to handle LTO.
+
+config BINUTILS_EXTRA_CONFIG
+    string
+    prompt "binutils extra config"
+    default ""
+    help
+      Extra flags passed onto ./configure when configuring
+
+config BINUTILS_FOR_TARGET
+    bool
+    prompt "binutils libraries for the target"
+    depends on ! BARE_METAL
+    depends on ! BACKEND
+    default n
+    help
+      Some utilities may need binutils libraries to be available on
+      the target, eg. oprofile.
+
+if BINUTILS_FOR_TARGET
+
+config BINUTILS_FOR_TARGET_IBERTY
+    bool
+    prompt "libiberty"
+    default y
+
+config BINUTILS_FOR_TARGET_BFD
+    bool
+    prompt "libbfd"
+    default y
+
+endif # BINUTILS_FOR_TARGET

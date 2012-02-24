@@ -1,0 +1,7 @@
+export PROJECT=custom
+export PRJROOT=/home/karim/opersys-dev/android/${PROJECT}
+export TARGET=arm-unknown-linux-gnueabi
+export PREFIX=${PRJROOT}/tools
+export TARGET_PREFIX=${PREFIX}/${TARGET}
+export PATH=${PREFIX}/bin:${TARGET_PREFIX}/bin:${PATH}
+cd $PRJROOT
